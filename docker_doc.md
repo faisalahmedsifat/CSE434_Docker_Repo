@@ -35,15 +35,32 @@ func main() {
     }
 }
 ```
+**which part?**
+```cmd, err := newDaemonCommand()```
+
 **What Does it do?**
 ```
 1. Check if the process is a re-executed process.
+   - It uses `reexec.Init()` to determine if the process is a re-executed one.
+
 2. Set the log format.
+   - It configures the logrus logger with a specific timestamp format and full timestamp display.
+
 3. Set the terminal emulation.
+   - It determines the standard input, output, and error streams of the terminal.
+
 4. Initialize the logging.
+   - It initializes the logging with the configured standard output and error streams.
+
 5. Configure the GRPC log.
+   - It sets up configuration for GRPC (Google Remote Procedure Call) logging.
+
 6. Create a new daemon command.
+   - It creates a new daemon command instance, which will handle various operations.
+
 7. Execute the command.
+   - It executes the previously created daemon command, which likely performs Docker-related operations.
+
 ```
 
 ### Step 2:
@@ -92,12 +109,19 @@ func newDaemonCommand() (*cobra.Command, error) {
 ```
 **What Does it do?**
 ```
-1. Create a new daemon command.
-2. Setup the root command.
-3. Set the flags.
-4. Install the flags.
-5. Install the service flags.
+1. Create a new configuration instance.
+2. Initialize daemon options based on the configuration.
+3. Define a new Cobra command for the 'dockerd' command.
+4. Set up the root command for the CLI.
+5. Add a flag to print version information.
+6. Get the default daemon configuration file path.
+7. Add a flag to specify the daemon configuration file.
+8. Configure certificates directory.
+9. Install flags for daemon options.
+10. Install configuration flags.
+11. Install service flags.
 ```
+
 ### Step 3:
 
 **File: cmd/dockerd/docker_unix.go**
@@ -111,8 +135,8 @@ func runDaemon(opts *daemonOptions) error {
 
 **What Does it do?**
 ```
-1. Create a new daemon cli.
-2. Start the daemon cli.
+- Create a new Daemon CLI instance.
+- Start the Daemon CLI using the provided options.
 ```
 
 ### Step 4:
@@ -317,34 +341,45 @@ func (cli *DaemonCli) start(opts *daemonOptions) (err error) {
 ```
 **What Does it do?**
 ```
-1. Create a new daemon cli.
-2. Load the daemon cli config.
-3. Check the deprecated options.
-4. Configure the proxy env.
-5. Configure the daemon logs.
-6. Enable the debug mode.
-7. Check if the daemon is running in rootless mode.
-8. Create the daemon root.
-9. Create the daemon exec root.
-10. Create the pid file.
-11. Create the daemon api.
-12. Load the listeners.
-13. Initialize the containerd.
-14. Initialize the middlewares.
-15. Create the daemon.
-16. Validate the authorization plugins.
-17. Start the metrics server.
-18. Create and start the cluster.
-19. Restart the swarm containers.
-20. Process the cluster notifications.
-21. Setup the config reload trap.
-22. Wait for the api to complete.
-23. Notify the systemd api.
-24. Shutdown the daemon.
-25. Notify the systemd that the daemon is shutting down.
-26. Stop the notification processing and background processes.
-27. Check if there is any error in the api.
-28. Shutdown the daemon.
+
+1. Load the daemon CLI configuration.
+2. Check for deprecated options.
+3. Create the API server configuration.
+4. If validation is requested, print a configuration confirmation message and return.
+5. Configure proxy environment and daemon logs.
+6. Log the startup process.
+7. Handle debug and experimental modes.
+8. Handle rootless mode with or without RootlessKit integration.
+9. Check for root privileges on Linux.
+10. Set the default umask.
+11. Create the daemon root directory.
+12. Create the daemon execution root directory.
+13. Handle the creation of PID files.
+14. Set sticky bit for files under XDG_RUNTIME_DIR in rootless mode.
+15. Initialize the API server.
+16. Load listeners for Docker services.
+17. Initialize ContainerD.
+18. Handle daemon shutdown and traps.
+19. Notify API readiness.
+20. Create and initialize the plugin store.
+21. Initialize middlewares.
+22. Create and configure the Docker daemon.
+23. Start the metrics server.
+24. Create and start the cluster component.
+25. Restart autostart containers in swarm mode.
+26. Complete daemon initialization.
+27. Configure the router and set up routing.
+28. Start processing cluster notifications.
+29. Set up trap for configuration reload.
+30. Start the API server in a goroutine.
+31. Notify systemd about readiness.
+32. Wait for the API server to complete.
+33. Cleanup and shut down the cluster.
+34. Notify systemd about stopping.
+35. Shutdown the Docker daemon.
+36. Stop notification processing and background processes.
+37. Handle API server errors.
+38. Log shutdown completion.
 ```
 
 ### Step 5:
@@ -408,7 +443,27 @@ func initRouter(opts routerOptions) {
 ```
 **What Does it do?**
 ```
-## TODO
+
+The `initRouter` function is responsible for initializing the Docker daemon's routing mechanism, which defines how incoming requests are handled. It sets up various routers and routes for different Docker functionalities.
+
+1. Initialize a container decoder for decoding container configurations.
+2. Create an array of routers to handle different aspects of Docker:
+   - Checkpoint Router: Handles checkpoints for containers.
+   - Container Router: Manages container-related operations.
+   - Image Router: Handles Docker image-related operations.
+   - System Router: Manages system-level operations.
+   - Volume Router: Manages Docker volumes.
+   - Build Router: Handles build-related operations.
+   - Session Router: Manages Docker sessions.
+   - Swarm Router: Handles Docker Swarm operations.
+   - Plugin Router: Manages Docker plugins.
+   - Distribution Router: Handles image distribution operations.
+3. Create an array of gRPC backends for gRPC-based routes.
+4. If gRPC backends are available, create a gRPC router.
+5. If the network controller is enabled, add a network router.
+6. If Docker experimental features are enabled, enable experimental routes in routers.
+7. Initialize the Docker API router with the configured routers.
+
 ```
 
 ### Step 6:
@@ -430,8 +485,11 @@ func NewRouter(b Backend, decoder httputils.ContainerDecoder, cgroup2 bool) rout
 ```
 **What Does it do?**
 ```
-1. Create a new container router.
-2. Initialize the routes.
+- `NewRouter` initializes a new container router.
+- It takes a Backend, ContainerDecoder, and a flag indicating whether Cgroup V2 (cgroup2) is enabled.
+- The function creates a containerRouter instance and initializes its routes.
+- The initialized router is returned.
+
 ```
 
 ### Step 7:
@@ -483,7 +541,11 @@ func (r *containerRouter) initRoutes() {
 
 **What Does it do?**
 ```
-## TODO
+
+- The `initRoutes` function initializes routes for handling various HTTP methods (HEAD, GET, POST, PUT, DELETE) related to containers in Docker.
+- It sets up routes for actions such as container creation, retrieval, manipulation, and removal.
+- The routes are defined using the `router.NewXxxRoute` functions, where "Xxx" represents the HTTP method (e.g., `router.NewGetRoute`, `router.NewPostRoute`).
+- Each route is associated with a specific handler function for handling the corresponding HTTP request.
 ```
 
 ### Step 8:
@@ -619,9 +681,15 @@ func (s *containerRouter) postContainersCreate(ctx context.Context, w http.Respo
 
 **What Does it do?**
 ```
-## TODO
+- The `postContainersCreate` function handles the HTTP POST request for creating a new Docker container.
+- It parses and validates the request parameters and payload.
+- Extracts container configuration, host configuration, and networking configuration from the request.
+- Adjusts CPU shares based on the Docker API version.
+- Modifies host configuration based on Docker API version for backward compatibility.
+- Handles various validation and parameter adjustments based on the Docker API version.
+- Creates a new container using the provided configurations.
+- Returns the container creation response as JSON.
 ```
-
 
 ### Step 9:
 
@@ -639,7 +707,11 @@ func (daemon *Daemon) ContainerCreate(params types.ContainerCreateConfig) (conta
 
 **What Does it do?**
 ```
-## TODO
+
+- The `ContainerCreate` function is part of the Daemon and is responsible for creating a new container based on the provided `types.ContainerCreateConfig`.
+- It calls the `containerCreate` function with specific options, including the creation parameters, managed flag, and image argument handling.
+- The `containerCreate` function performs the actual container creation, and this function acts as a higher-level wrapper.
+- The function returns a `containertypes.CreateResponse` containing information about the created container or an error if the creation fails.
 ```
 
 ### Step 10:
@@ -702,9 +774,17 @@ func (daemon *Daemon) containerCreate(opts createOpts) (containertypes.CreateRes
 
 **What Does it do?**
 ```
-## TODO
-```
+- The `containerCreate` function is part of the Daemon and is responsible for creating a new container with the provided options.
+- It performs various checks and validations before creating the container.
+- Checks if the provided configuration is valid and not empty.
+- Verifies container settings, including host configuration and networking configuration.
+- Validates the platform of the requested image if not specified explicitly.
+- Adapts container settings, such as CPU shares, if needed.
+- Calls the `create` function to actually create the container.
+- Records metrics related to container creation.
+- Returns a `containertypes.CreateResponse` with the container ID and any warnings, or an error if the creation fails.
 
+```
 
 ### Step 11:
 
@@ -733,5 +813,13 @@ func (daemon *Daemon) verifyContainerSettings(hostConfig *containertypes.HostCon
 
 **What Does it do?**
 ```
-## TODO
+
+- The `verifyContainerSettings` function is part of the Daemon and is responsible for verifying container settings before creating or updating a container.
+- It first performs verification of settings that are common across all platforms.
+  - It validates the container configuration using `validateContainerConfig`.
+  - It validates the host configuration using `validateHostConfig`.
+- After common verifications, it proceeds to perform platform-specific verification using `verifyPlatformContainerSettings`.
+- The function collects any warnings generated during the verification process and logs them.
+- It returns the collected warnings and an error if any validation fails.
+
 ```
